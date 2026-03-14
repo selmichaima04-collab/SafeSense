@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "764762448911",
+    "project_id": "safesense-df3ee",
+    "storage_bucket": "safesense-df3ee.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:764762448911:android:233bd4cd2e77d4a6712f7a",
+        "android_client_info": {
+          "package_name": "com.example.safesense"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBPmCVN4pjcT8yCeIJaZuapndeiE6PoYcw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
