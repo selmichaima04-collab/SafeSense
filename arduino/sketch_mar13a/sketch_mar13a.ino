@@ -90,8 +90,8 @@ Serial.println("\nWiFi Connected");
 config.api_key = API_KEY;
 config.database_url = DATABASE_URL;
 
-auth.user.email = "selmichaima04@gmail.com";
-auth.user.password = "chmayadodo2004";
+auth.user.email = "";
+auth.user.password = "";
 
 Firebase.begin(&config,&auth);
 Firebase.reconnectWiFi(true);
