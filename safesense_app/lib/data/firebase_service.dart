@@ -6,7 +6,7 @@ class FirebaseService {
   // Fixed: Removed '/SafeSense' from the base URL as it is specified in .ref()
   final DatabaseReference _dbRef = FirebaseDatabase.instanceFor(
     app: Firebase.app(),
-    databaseURL: 'https://safesense-df3ee-default-rtdb.europe-west1.firebasedatabase.app',
+    databaseURL: '',
   ).ref('SafeSense');
 
   Stream<SensorData> getSensorDataStream() {

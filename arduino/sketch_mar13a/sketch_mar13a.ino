@@ -8,11 +8,11 @@
 #include "spo2_algorithm.h"
 
 /* WIFI */
-#define WIFI_SSID "TOPNETD989728F"
-#define WIFI_PASSWORD "856E9F3C33"
+#define WIFI_SSID ""
+#define WIFI_PASSWORD ""
 
 /* FIREBASE */
-#define API_KEY "AIzaSyBPmCVN4pjcT8yCeIJaZuapndeiE6PoYcw"
+#define API_KEY "API_KEY"
 #define DATABASE_URL "https://safesense-df3ee-default-rtdb.europe-west1.firebasedatabase.app/"
 
 /* Firebase */
