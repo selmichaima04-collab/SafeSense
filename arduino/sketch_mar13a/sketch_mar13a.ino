@@ -8,14 +8,14 @@
 #include "spo2_algorithm.h"
 
 /* WIFI */
-#define WIFI_SSID "YOUR WIFI_SSID"
-#define WIFI_PASSWORD "YOUR WIFI_PASSWORD"
+#define WIFI_SSID "TOPNETD989728F"
+#define WIFI_PASSWORD "856E9F3C33"
 
 /* FIREBASE */
-#define API_KEY "your API_KEY"
-#define DATABASE_URL "your DATABASE_URL"
+#define API_KEY "AIzaSyBPmCVN4pjcT8yCeIJaZuapndeiE6PoYcw"
+#define DATABASE_URL "https://safesense-df3ee-default-rtdb.europe-west1.firebasedatabase.app/"
 
-/* FIREBASE */
+/* Firebase */
 FirebaseData fbdo;
 FirebaseAuth auth;
 FirebaseConfig config;
@@ -32,7 +32,6 @@ Adafruit_MPU6050 mpu;
 MAX30105 particleSensor;
 
 #define BUFFER_SIZE 100
-
 uint32_t irBuffer[BUFFER_SIZE];
 uint32_t redBuffer[BUFFER_SIZE];
 
@@ -42,13 +41,35 @@ int8_t validSPO2;
 int32_t heartRate;
 int8_t validHeartRate;
 
+/* MOVING AVERAGE */
+#define FILTER_SIZE 5
+
+int hrBuffer[FILTER_SIZE];
+int spo2Buffer[FILTER_SIZE];
+int filterIndex = 0;
+
+/* LOW PASS FILTER */
+
+float filteredHR = 0;
+float filteredSPO2 = 0;
+float alpha = 0.3;
+
+/* AVERAGE FUNCTION */
+
+int average(int *buffer)
+{
+  int sum = 0;
+  for(int i=0;i<FILTER_SIZE;i++)
+  sum += buffer[i];
+
+  return sum/FILTER_SIZE;
+}
+
 void setup()
 {
 
 Serial.begin(115200);
 delay(2000);
-
-Serial.println("SafeSense System Start");
 
 /* WIFI */
 
@@ -69,13 +90,13 @@ Serial.println("\nWiFi Connected");
 config.api_key = API_KEY;
 config.database_url = DATABASE_URL;
 
-auth.user.email = "";
-auth.user.password = "";
+auth.user.email = "selmichaima04@gmail.com";
+auth.user.password = "chmayadodo2004";
 
-Firebase.begin(&config, &auth);
+Firebase.begin(&config,&auth);
 Firebase.reconnectWiFi(true);
 
-Serial.println("Firebase started");
+Serial.println("Firebase Ready");
 
 /* I2C */
 
@@ -87,7 +108,7 @@ dht.begin();
 
 /* MPU6050 */
 
-if (!mpu.begin(0x68))
+if(!mpu.begin(0x68))
 {
 Serial.println("MPU6050 not detected");
 }
@@ -98,13 +119,10 @@ Serial.println("MPU6050 Ready");
 
 /* MAX30102 */
 
-if (!particleSensor.begin(Wire, I2C_SPEED_FAST))
+if(!particleSensor.begin(Wire,I2C_SPEED_FAST))
 {
 Serial.println("MAX30102 not detected");
-}
-else
-{
-Serial.println("MAX30102 Ready");
+while(1);
 }
 
 particleSensor.setup();
@@ -113,18 +131,20 @@ particleSensor.setPulseAmplitudeGreen(0);
 
 }
 
+/* LOOP */
+
 void loop()
 {
 
-/* TEMPERATURE + HUMIDITY */
+/* DHT DATA */
 
 float temperature = dht.readTemperature();
 float humidity = dht.readHumidity();
 
-/* MPU6050 */
+/* MPU6050 DATA */
 
-sensors_event_t a, g, temp;
-mpu.getEvent(&a, &g, &temp);
+sensors_event_t a,g,temp;
+mpu.getEvent(&a,&g,&temp);
 
 float ax = a.acceleration.x;
 float ay = a.acceleration.y;
@@ -139,11 +159,11 @@ bool fallDetected = false;
 if(totalAcc > 20)
 fallDetected = true;
 
-/* MAX30102 */
+/* MAX30102 READING */
 
-for (byte i = 0 ; i < BUFFER_SIZE ; i++)
+for(byte i=0;i<BUFFER_SIZE;i++)
 {
-while (particleSensor.available() == false)
+while(particleSensor.available()==false)
 particleSensor.check();
 
 redBuffer[i] = particleSensor.getRed();
@@ -151,6 +171,17 @@ irBuffer[i] = particleSensor.getIR();
 
 particleSensor.nextSample();
 }
+
+/* FINGER DETECTION */
+
+if(irBuffer[BUFFER_SIZE-1] < 50000)
+{
+Serial.println("No finger detected");
+delay(2000);
+return;
+}
+
+/* CALCULATE HR + SPO2 */
 
 maxim_heart_rate_and_oxygen_saturation(
 irBuffer,
@@ -162,9 +193,52 @@ redBuffer,
 &validHeartRate
 );
 
-/* SEND TO FIREBASE */
+/* MOVING AVERAGE */
 
-if (Firebase.ready())
+hrBuffer[filterIndex] = heartRate;
+spo2Buffer[filterIndex] = spo2;
+
+filterIndex++;
+
+if(filterIndex >= FILTER_SIZE)
+filterIndex = 0;
+
+int avgHR = average(hrBuffer);
+int avgSPO2 = average(spo2Buffer);
+
+/* LOW PASS FILTER */
+
+filteredHR = alpha * avgHR + (1-alpha)*filteredHR;
+filteredSPO2 = alpha * avgSPO2 + (1-alpha)*filteredSPO2;
+
+/* SERIAL OUTPUT */
+
+Serial.println("\nSensor Data");
+
+Serial.print("Temperature: ");
+Serial.println(temperature);
+
+Serial.print("Humidity: ");
+Serial.println(humidity);
+
+Serial.print("AX: ");
+Serial.println(ax);
+
+Serial.print("AY: ");
+Serial.println(ay);
+
+Serial.print("AZ: ");
+Serial.println(az);
+
+Serial.print("HeartRate: ");
+Serial.println(filteredHR);
+
+Serial.print("SpO2: ");
+Serial.println(filteredSPO2);
+
+/* SEND DATA TO FIREBASE */
+
+if(Firebase.ready())
 {
 
 Firebase.RTDB.setFloat(&fbdo,"SafeSense/temperature",temperature);
@@ -176,11 +250,8 @@ Firebase.RTDB.setFloat(&fbdo,"SafeSense/accZ",az);
 
 Firebase.RTDB.setBool(&fbdo,"SafeSense/fall",fallDetected);
 
-if(validHeartRate)
-Firebase.RTDB.setInt(&fbdo,"SafeSense/heartRate",heartRate);
-
-if(validSPO2)
-Firebase.RTDB.setInt(&fbdo,"SafeSense/spo2",spo2);
+Firebase.RTDB.setFloat(&fbdo,"SafeSense/heartRate",filteredHR);
+Firebase.RTDB.setFloat(&fbdo,"SafeSense/spo2",filteredSPO2);
 
 Serial.println("Data sent to Firebase");
 

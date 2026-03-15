@@ -20,15 +20,23 @@ class SensorData {
   });
 
   factory SensorData.fromMap(Map<dynamic, dynamic> map) {
+    // Helper to extract double from various formats
+    double toDouble(dynamic val) {
+      if (val == null) return 0.0;
+      if (val is int) return val.toDouble();
+      if (val is double) return val;
+      return double.tryParse(val.toString()) ?? 0.0;
+    }
+
     return SensorData(
-      temperature: (map['temperature'] ?? 0.0).toDouble(),
-      humidity: (map['humidity'] ?? 0.0).toDouble(),
-      heartRate: map['heartRate'] ?? 0,
-      spo2: map['spo2'] ?? 0,
-      accX: (map['accX'] ?? 0.0).toDouble(),
-      accY: (map['accY'] ?? 0.0).toDouble(),
-      accZ: (map['accZ'] ?? 0.0).toDouble(),
-      fall: map['fall'] ?? false,
+      temperature: toDouble(map['temperature'] ?? map['temp']),
+      humidity: toDouble(map['humidity'] ?? map['hum']),
+      heartRate: map['heartRate'] ?? map['hr'] ?? map['bpm'] ?? 0,
+      spo2: map['spo2'] ?? map['ox'] ?? 0,
+      accX: toDouble(map['accX'] ?? map['ax'] ?? map['x']),
+      accY: toDouble(map['accY'] ?? map['ay'] ?? map['y']),
+      accZ: toDouble(map['accZ'] ?? map['az'] ?? map['z']),
+      fall: map['fall'] ?? map['isFall'] ?? false,
     );
   }
 }

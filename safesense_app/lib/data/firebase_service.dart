@@ -3,11 +3,10 @@ import 'package:firebase_database/firebase_database.dart';
 import '../models/sensor_data.dart';
 
 class FirebaseService {
-  // Explicitly setting the database URL for the Europe region
-  // Passing the default Firebase app to satisfy the required 'app' parameter
+  // Fixed: Removed '/SafeSense' from the base URL as it is specified in .ref()
   final DatabaseReference _dbRef = FirebaseDatabase.instanceFor(
     app: Firebase.app(),
-    databaseURL: 'YOUR DATABASE_URL',
+    databaseURL: 'https://safesense-df3ee-default-rtdb.europe-west1.firebasedatabase.app',
   ).ref('SafeSense');
 
   Stream<SensorData> getSensorDataStream() {
